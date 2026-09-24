@@ -1,0 +1,33 @@
+
+fastp \
+  -i Chemical_03_R1.fastq.gz \
+  -I Chemical_03_R2.fastq.gz \
+  -o Chemical_03_R1.clean.fastq.gz \
+  -O Chemical_03_R2.clean.fastq.gz \
+  --detect_adapter_for_pe \
+  --qualified_quality_phred 20 \
+  --unqualified_percent_limit 30 \
+  --n_base_limit 0 \
+  --length_required 50 \
+  --thread 4 \
+  --html Chemical_03_fastp.html --json Chemical_03_fastp.json
+
+
+# Ensure directory exists
+mkdir -p /home/jagat/TOOLS/humann_dbs
+
+# Download ChocoPhlAn, then UniRef90, then Utility Mapping sequentially
+singularity exec humann3.sif humann_databases --download chocophlan full /home/jagat/TOOLS/humann_dbs && \
+singularity exec humann3.sif humann_databases --download uniref uniref90_diamond /home/jagat/TOOLS/humann_dbs && \
+singularity exec humann3.sif humann_databases --download utility_mapping full /home/jagat/TOOLS/humann_dbs
+
+
+nohup /usr/bin/time -v singularity exec \
+    --bind /media/jagat/DATADRIVE0:/media/jagat/DATADRIVE0 \
+    humann3.sif bash -c 'cat /media/jagat/DATADRIVE0/sristi/Pranav/Metagenomics_Year_1/test/Chemical_03_R1.fastq.gz /media/jagat/DATADRIVE0/sristi/Pranav/Metagenomics_Year_1/test/Chemical_03_R2.fastq.gz | humann \
+    --input - \
+    --output /media/jagat/DATADRIVE0/sristi/Pranav/Metagenomics_Year_1/humann_output_chemical \
+    --nucleotide-database /media/jagat/DATADRIVE0/humann_dbs/chocophlan \
+    --protein-database /media/jagat/DATADRIVE0/humann_dbs/uniref \
+    --threads 10 \
+    --diamond-options "--block-size 2.0 --sensitive"' > humann_chemical.log 2>&1 &
