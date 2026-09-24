@@ -1,0 +1,55 @@
+
+#1
+/usr/bin/time -v singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann --input 02_Processed-data/Chemical_03_merged.fastp.fastq.gz --output 03_Humann3/Chemical_03_humann/ --protein-database /dbs/uniref --search-mode uniref90 --bypass-nucleotide-search --threads 12 --remove-temp-output > Chemical_03_humann.log 2>&1 &
+
+#2
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_renorm_table --input 03_Humann3/Chemical_03_humann/Chemical_03_merged.fastp_genefamilies.tsv --units cpm --output 03_Humann3/Chemical_03_humann/Chemical_03_genefamilies_cpm.tsv
+
+# 3 Regrouped to KO
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_regroup_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_genefamilies_cpm.tsv     --custom /dbs/utility_mapping/map_ko_uniref90.txt.gz     --output 03_Humann3/Chemical_03_humann/Chemical_03_ko_cpm.tsv
+
+# 4 Attach readable name
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_rename_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_ko_cpm.tsv     --custom /dbs/utility_mapping/map_ko_name.txt.gz     --output 03_Humann3/Chemical_03_humann/Chemical_03_ko_cpm_named.tsv
+
+# 5 Regroup COG
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_regroup_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_genefamilies_cpm.tsv     --custom /dbs/utility_mapping/map_eggnog_uniref90.txt.gz     --output 03_Humann3/Chemical_03_humann/Chemical_03_cog_cpm.tsv
+
+# 6 Attach readable name
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_rename_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_cog_cpm.tsv     --custom /dbs/utility_mapping/map_eggnog_name.txt.gz     --output 03_Humann3/Chemical_03_humann/Chemical_03_cog_cpm_named.tsv
+
+# 7 Normalized pathway abundance and relative abundance
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_renorm_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_merged.fastp_pathabundance.tsv     --units relab     --output 03_Humann3/Chemical_03_humann/Chemical_03_pathabundance_relab.tsv
+
+# 8 Clear pathway defination or name
+singularity exec   --bind /home/jagat/TOOLS/humann_dbs:/dbs   /home/jagat/TOOLS/humann3.sif   humann_rename_table     --input 03_Humann3/Chemical_03_humann/Chemical_03_pathabundance_relab.tsv     --names metacyc-pwy     --output 03_Humann3/Chemical_03_humann/Chemical_03_pathabundance_named.tsv
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+# Natural
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+# 1
+/usr/bin/time -v singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann --input 02_Processed-data/Natural_03_merged.fastp.fastq.gz --output 03_Humann3/Natural_03_humann/ --protein-database /dbs/uniref --search-mode uniref90 --bypass-nucleotide-search --threads 12 --remove-temp-output > Natural_03_humann.log 2>&1 &
+
+# 2
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_renorm_table --input 03_Humann3/Natural_03_humann/Natural_03_merged.fastp_genefamilies.tsv --units cpm --output 03_Humann3/Natural_03_humann/Natural_03_genefamilies_cpm.tsv
+
+# 3
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_regroup_table --input 03_Humann3/Natural_03_humann/Natural_03_genefamilies_cpm.tsv --custom /dbs/utility_mapping/map_ko_uniref90.txt.gz --output 03_Humann3/Natural_03_humann/Natural_03_ko_cpm.tsv
+
+# 4
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_rename_table --input 03_Humann3/Natural_03_humann/Natural_03_ko_cpm.tsv --custom /dbs/utility_mapping/map_ko_name.txt.gz --output 03_Humann3/Natural_03_humann/Natural_03_ko_cpm_named.tsv
+
+# 5
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_regroup_table --input 03_Humann3/Natural_03_humann/Natural_03_genefamilies_cpm.tsv --custom /dbs/utility_mapping/map_eggnog_uniref90.txt.gz --output 03_Humann3/Natural_03_humann/Natural_03_cog_cpm.tsv
+
+# 6
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_rename_table --input 03_Humann3/Natural_03_humann/Natural_03_cog_cpm.tsv --custom /dbs/utility_mapping/map_eggnog_name.txt.gz --output 03_Humann3/Natural_03_humann/Natural_03_cog_cpm_named.tsv
+
+# 7
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_renorm_table --input 03_Humann3/Natural_03_humann/Natural_03_merged.fastp_pathabundance.tsv --units relab --output 03_Humann3/Natural_03_humann/Natural_03_pathabundance_relab.tsv
+
+# 8
+singularity exec --bind /home/jagat/TOOLS/humann_dbs:/dbs /home/jagat/TOOLS/humann3.sif humann_rename_table --input 03_Humann3/Natural_03_humann/Natural_03_pathabundance_relab.tsv --names metacyc-pwy --output 03_Humann3/Natural_03_humann/Natural_03_pathabundance_named.tsv
+
+
