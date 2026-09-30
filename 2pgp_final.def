@@ -1,0 +1,113 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%labels
+    Maintainer Beginner_Bioinformatics
+    Description Simple Ubuntu-based container for PGPg_finder
+
+%environment
+    export PATH=/opt/PGPg_finder:/opt/diamond:/opt/megahit/bin:/opt/conda/bin:/opt/bbmap:/usr/share/bbmap:$PATH
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    # _JAVA_OPTIONS="-Xmx16g" REMOVED: it forces a global max-heap cap on
+    # every Java process in the container, which now collides with
+    # BBMap's own calcmem-based heap auto-detection (calcmem correctly
+    # computes a much larger initial heap from actual system RAM, and a
+    # smaller forced max-heap makes the JVM refuse to start with
+    # "Initial heap size set to a larger value than the maximum heap
+    # size"). Let calcmem size Java's heap correctly per-machine instead.
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    # Step 1: Update Ubuntu and enable universe repo
+    apt-get update
+    apt-get install -y software-properties-common
+    add-apt-repository -y universe
+    apt-get update
+
+    # Step 2: Install core dependencies via apt
+    apt-get install -y \
+        wget \
+        git \
+        bzip2 \
+        ca-certificates \
+        build-essential \
+        cmake \
+        zlib1g-dev \
+        gawk \
+        python3 \
+        python3-pip \
+        python3-numpy \
+        python3-scipy \
+        python3-pandas \
+        python3-matplotlib \
+        python3-seaborn \
+        default-jre \
+        samtools \
+        bowtie2 \
+        prodigal \
+        unzip
+
+    # Step 3: BBTools (BBMap) Download & Directory Linking
+    cd /opt
+    wget https://sourceforge.net/projects/bbmap/files/latest/download -O bbmap.tar.gz
+    tar -xzvf bbmap.tar.gz
+    rm bbmap.tar.gz
+    chmod -R +x /opt/bbmap
+
+    # Alias calcmem and create bbmap.jar so exact path checks pass
+    ln -sf /opt/bbmap/calcmem.sh /opt/bbmap/calcmem
+    touch /opt/bbmap/bbmap.jar
+
+    # Direct whole-directory symlink for /usr/share/bbmap
+    rm -rf /usr/share/bbmap
+    ln -s /opt/bbmap /usr/share/bbmap
+
+    # Expose all BBMap .sh scripts globally to PATH
+    for f in /opt/bbmap/*.sh; do
+        ln -sf "$f" /usr/local/bin/"$(basename "$f")"
+    done
+    ln -sf /opt/bbmap/calcmem /usr/local/bin/calcmem
+
+    # Step 4: DIAMOND v2.0.14
+    mkdir -p /opt/diamond
+    cd /opt/diamond
+    wget https://github.com/bbuchfink/diamond/releases/download/v2.0.14/diamond-linux64.tar.gz
+    tar xzf diamond-linux64.tar.gz
+    rm diamond-linux64.tar.gz
+
+    # Step 4b: MEGAHIT v1.2.9
+    cd /opt
+    wget https://github.com/voutcn/megahit/releases/download/v1.2.9/MEGAHIT-1.2.9-Linux-x86_64-static.tar.gz
+    tar xzf MEGAHIT-1.2.9-Linux-x86_64-static.tar.gz
+    mv MEGAHIT-1.2.9-Linux-x86_64-static megahit
+    rm MEGAHIT-1.2.9-Linux-x86_64-static.tar.gz
+
+    # Step 5: Conda setup for PEAR, Trimmomatic, and Python plotting packages
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
+    bash /tmp/miniconda.sh -b -p /opt/conda
+    rm /tmp/miniconda.sh
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+    /opt/conda/bin/conda install -y -c bioconda -c conda-forge pear=0.9.6 trimmomatic
+    /opt/conda/bin/conda clean -a -y
+
+    /opt/conda/bin/pip install --no-cache-dir \
+        pandas \
+        numpy \
+        scipy \
+        matplotlib \
+        seaborn
+
+    # Step 6: Clone PGPg_finder
+    cd /opt
+    git clone https://github.com/tpellegrinetti/PGPg_finder.git
+    chmod +x /opt/PGPg_finder/PGPg_finder.py
+
+    # Step 7: Cleanup
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+%runscript
+    exec python3 /opt/PGPg_finder/PGPg_finder.py "$@"
